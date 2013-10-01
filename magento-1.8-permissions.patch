@@ -1,0 +1,925 @@
+diff -urN magento-vanilla/app/code/core/Mage/Adminhtml/Model/Extension.php magento/app/code/core/Mage/Adminhtml/Model/Extension.php
+--- magento-vanilla/app/code/core/Mage/Adminhtml/Model/Extension.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Adminhtml/Model/Extension.php	2013-10-01 16:30:07.394752714 +0300
+@@ -295,7 +295,7 @@
+         array_pop($parts);
+         $newDir = implode(DS, $parts);
+         if ((!empty($newDir)) && (!is_dir($dir . DS . $newDir))) {
+-            if (!@mkdir($dir . DS . $newDir, 0777, true)) {
++            if (!@mkdir($dir . DS . $newDir, 0770, true)) {
+                 return false;
+             }
+         }
+diff -urN magento-vanilla/app/code/core/Mage/Catalog/Model/Api2/Product/Image/Rest/Admin/V1.php magento/app/code/core/Mage/Catalog/Model/Api2/Product/Image/Rest/Admin/V1.php
+--- magento-vanilla/app/code/core/Mage/Catalog/Model/Api2/Product/Image/Rest/Admin/V1.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Catalog/Model/Api2/Product/Image/Rest/Admin/V1.php	2013-10-01 16:41:10.231626607 +0300
+@@ -64,7 +64,7 @@
+             $ioAdapter = new Varien_Io_File();
+             $ioAdapter->checkAndCreateFolder($apiTempDir);
+             $ioAdapter->open(array('path' => $apiTempDir));
+-            $ioAdapter->write($imageFileName, $imageFileContent, 0666);
++            $ioAdapter->write($imageFileName, $imageFileContent, 0660);
+             unset($imageFileContent);
+ 
+             // try to create Image object to check if image data is valid
+diff -urN magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Attribute/Backend/Media.php magento/app/code/core/Mage/Catalog/Model/Product/Attribute/Backend/Media.php
+--- magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Attribute/Backend/Media.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Catalog/Model/Product/Attribute/Backend/Media.php	2013-10-01 16:30:24.179565398 +0300
+@@ -308,7 +308,7 @@
+                 $ioAdapter->cp($file, $this->_getConfig()->getTmpMediaPath($fileName));
+ 
+                 $storageHelper->saveFile($this->_getConfig()->getTmpMediaShortUrl($fileName));
+-                $ioAdapter->chmod($this->_getConfig()->getTmpMediaPath($fileName), 0777);
++                $ioAdapter->chmod($this->_getConfig()->getTmpMediaPath($fileName), 0770);
+             }
+         }
+         catch (Exception $e) {
+@@ -558,7 +558,7 @@
+         try {
+             $ioObject->open(array('path'=>$destDirectory));
+         } catch (Exception $e) {
+-            $ioObject->mkdir($destDirectory, 0777, true);
++            $ioObject->mkdir($destDirectory, 0770, true);
+             $ioObject->open(array('path'=>$destDirectory));
+         }
+ 
+diff -urN magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Attribute/Media/Api.php magento/app/code/core/Mage/Catalog/Model/Product/Attribute/Media/Api.php
+--- magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Attribute/Media/Api.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Catalog/Model/Product/Attribute/Media/Api.php	2013-10-01 16:41:01.071751717 +0300
+@@ -150,7 +150,7 @@
+             $ioAdapter->checkAndCreateFolder($tmpDirectory);
+             $ioAdapter->open(array('path'=>$tmpDirectory));
+             // Write image file
+-            $ioAdapter->write($fileName, $fileContent, 0666);
++            $ioAdapter->write($fileName, $fileContent, 0660);
+             unset($fileContent);
+ 
+             // try to create Image object - it fails with Exception if image is not supported
+@@ -227,7 +227,7 @@
+             try {
+                 $fileName = Mage::getBaseDir('media'). DS . 'catalog' . DS . 'product' . $file;
+                 $ioAdapter->open(array('path'=>dirname($fileName)));
+-                $ioAdapter->write(basename($fileName), $fileContent, 0666);
++                $ioAdapter->write(basename($fileName), $fileContent, 0660);
+ 
+             } catch(Exception $e) {
+                 $this->_fault('not_created', Mage::helper('catalog')->__('Can\'t create image.'));
+diff -urN magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Option/Type/File.php magento/app/code/core/Mage/Catalog/Model/Product/Option/Type/File.php
+--- magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Option/Type/File.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Catalog/Model/Product/Option/Type/File.php	2013-10-01 16:30:34.156751484 +0300
+@@ -723,7 +723,7 @@
+     protected function _createWriteableDir($path)
+     {
+         $io = new Varien_Io_File();
+-        if (!$io->isWriteable($path) && !$io->mkdir($path, 0777, true)) {
++        if (!$io->isWriteable($path) && !$io->mkdir($path, 0770, true)) {
+             Mage::throwException(Mage::helper('catalog')->__("Cannot create writeable directory '%s'.", $path));
+         }
+     }
+diff -urN magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Type/Abstract.php magento/app/code/core/Mage/Catalog/Model/Product/Type/Abstract.php
+--- magento-vanilla/app/code/core/Mage/Catalog/Model/Product/Type/Abstract.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Catalog/Model/Product/Type/Abstract.php	2013-10-01 16:30:44.972751221 +0300
+@@ -445,7 +445,7 @@
+ 
+                         $path = dirname($dst);
+                         $io = new Varien_Io_File();
+-                        if (!$io->isWriteable($path) && !$io->mkdir($path, 0777, true)) {
++                        if (!$io->isWriteable($path) && !$io->mkdir($path, 0770, true)) {
+                             Mage::throwException(Mage::helper('catalog')->__("Cannot create writeable directory '%s'.", $path));
+                         }
+ 
+diff -urN magento-vanilla/app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php magento/app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php
+--- magento-vanilla/app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Cms/Model/Wysiwyg/Images/Storage.php	2013-10-01 16:29:29.810752322 +0300
+@@ -64,7 +64,7 @@
+             foreach ($subDirectories as $directory) {
+                 $fullPath = rtrim($path, DS) . DS . $directory['name'];
+                   if (!file_exists($fullPath)) {
+-                    mkdir($fullPath, 0777, true);
++                    mkdir($fullPath, 0770, true);
+                 }
+             }
+         }
+diff -urN magento-vanilla/app/code/core/Mage/Compiler/Model/Process.php magento/app/code/core/Mage/Compiler/Model/Process.php
+--- magento-vanilla/app/code/core/Mage/Compiler/Model/Process.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Compiler/Model/Process.php	2013-10-01 16:29:56.922752210 +0300
+@@ -215,7 +215,7 @@
+     {
+         if (!is_dir($dir)) {
+             mkdir($dir);
+-            @chmod($dir, 0777);
++            @chmod($dir, 0770);
+         }
+         return $dir;
+     }
+diff -urN magento-vanilla/app/code/core/Mage/Connect/Model/Extension.php magento/app/code/core/Mage/Connect/Model/Extension.php
+--- magento-vanilla/app/code/core/Mage/Connect/Model/Extension.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Connect/Model/Extension.php	2013-10-01 16:31:12.469688864 +0300
+@@ -262,7 +262,7 @@
+         array_pop($parts);
+         $newDir = implode(DS, $parts);
+         if ((!empty($newDir)) && (!is_dir($path . $newDir))) {
+-            if (!@mkdir($path . $newDir, 0777, true)) {
++            if (!@mkdir($path . $newDir, 0770, true)) {
+                 return false;
+             }
+         }
+diff -urN magento-vanilla/app/code/core/Mage/Core/Model/Cache.php magento/app/code/core/Mage/Core/Model/Cache.php
+--- magento-vanilla/app/code/core/Mage/Core/Model/Cache.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Core/Model/Cache.php	2013-10-01 16:28:58.914002840 +0300
+@@ -76,7 +76,7 @@
+      */
+     protected $_defaultBackendOptions = array(
+         'hashed_directory_level'    => 1,
+-        'hashed_directory_umask'    => 0777,
++        'hashed_directory_umask'    => 0770,
+         'file_name_prefix'          => 'mage',
+     );
+ 
+diff -urN magento-vanilla/app/code/core/Mage/Core/Model/Config/Options.php magento/app/code/core/Mage/Core/Model/Config/Options.php
+--- magento-vanilla/app/code/core/Mage/Core/Model/Config/Options.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Core/Model/Config/Options.php	2013-10-01 16:28:49.889751781 +0300
+@@ -222,7 +222,7 @@
+             }
+         } else {
+             $oldUmask = umask(0);
+-            if (!@mkdir($dir, 0777, true)) {
++            if (!@mkdir($dir, 0770, true)) {
+                 return false;
+             }
+             umask($oldUmask);
+diff -urN magento-vanilla/app/code/core/Mage/Core/Model/Resource/File/Storage/File.php magento/app/code/core/Mage/Core/Model/Resource/File/Storage/File.php
+--- magento-vanilla/app/code/core/Mage/Core/Model/Resource/File/Storage/File.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Core/Model/Resource/File/Storage/File.php	2013-10-01 16:28:38.865752591 +0300
+@@ -150,7 +150,7 @@
+         $path = Mage::helper('core/file_storage_database')->getMediaBaseDir() . DS . str_replace('/', DS, $path);
+ 
+         if (!file_exists($path) || !is_dir($path)) {
+-            if (!@mkdir($path, 0777, true)) {
++            if (!@mkdir($path, 0770, true)) {
+                 Mage::throwException(Mage::helper('core')->__('Unable to create directory: %s', $path));
+             }
+         }
+@@ -172,7 +172,7 @@
+         $path = $this->getMediaBaseDirectory() . DS . str_replace('/', DS ,dirname($filePath));
+ 
+         if (!file_exists($path) || !is_dir($path)) {
+-            @mkdir($path, 0777, true);
++            @mkdir($path, 0770, true);
+         }
+ 
+         $ioFile = new Varien_Io_File();
+diff -urN magento-vanilla/app/code/core/Mage/Dataflow/Model/Convert/Adapter/Io.php magento/app/code/core/Mage/Dataflow/Model/Convert/Adapter/Io.php
+--- magento-vanilla/app/code/core/Mage/Dataflow/Model/Convert/Adapter/Io.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Dataflow/Model/Convert/Adapter/Io.php	2013-10-01 16:29:18.625566109 +0300
+@@ -155,7 +155,7 @@
+ 
+         $filename = $this->getVar('filename');
+ 
+-        $result   = $this->getResource()->write($filename, $dataFile, 0777);
++        $result   = $this->getResource()->write($filename, $dataFile, 0770);
+ 
+         if (false === $result) {
+             $message = Mage::helper('dataflow')->__('Could not save file: %s.', $filename);
+diff -urN magento-vanilla/app/code/core/Mage/Downloadable/Helper/File.php magento/app/code/core/Mage/Downloadable/Helper/File.php
+--- magento-vanilla/app/code/core/Mage/Downloadable/Helper/File.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Downloadable/Helper/File.php	2013-10-01 16:29:40.811751226 +0300
+@@ -85,7 +85,7 @@
+         try {
+             $ioObject->open(array('path'=>$destDirectory));
+         } catch (Exception $e) {
+-            $ioObject->mkdir($destDirectory, 0777, true);
++            $ioObject->mkdir($destDirectory, 0770, true);
+             $ioObject->open(array('path'=>$destDirectory));
+         }
+ 
+diff -urN magento-vanilla/app/code/core/Mage/ImportExport/Model/Abstract.php magento/app/code/core/Mage/ImportExport/Model/Abstract.php
+--- magento-vanilla/app/code/core/Mage/ImportExport/Model/Abstract.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/ImportExport/Model/Abstract.php	2013-10-01 16:31:36.580756573 +0300
+@@ -89,7 +89,7 @@
+             $dirPath = Mage::getBaseDir('var') . DS . Mage_ImportExport_Model_Scheduled_Operation::LOG_DIRECTORY
+                 . $dirName;
+             if (!is_dir($dirPath)) {
+-                mkdir($dirPath, 0777, true);
++                mkdir($dirPath, 0770, true);
+             }
+             $fileName = substr(strstr(Mage_ImportExport_Model_Scheduled_Operation::LOG_DIRECTORY, DS), 1)
+                 . $dirName . $fileName . '.log';
+diff -urN magento-vanilla/app/code/core/Mage/ImportExport/Model/Import/Entity/Product.php magento/app/code/core/Mage/ImportExport/Model/Import/Entity/Product.php
+--- magento-vanilla/app/code/core/Mage/ImportExport/Model/Import/Entity/Product.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/ImportExport/Model/Import/Entity/Product.php	2013-10-01 16:31:27.749562517 +0300
+@@ -1465,7 +1465,7 @@
+             $tmpDir     = Mage::getConfig()->getOptions()->getMediaDir() . '/import';
+             $destDir    = Mage::getConfig()->getOptions()->getMediaDir() . '/catalog/product';
+             if (!is_writable($destDir)) {
+-                @mkdir($destDir, 0777, true);
++                @mkdir($destDir, 0770, true);
+             }
+             if (!$this->_fileUploader->setTmpDir($tmpDir)) {
+                 Mage::throwException("File directory '{$tmpDir}' is not readable.");
+diff -urN magento-vanilla/app/code/core/Mage/Install/Model/Installer/Config.php magento/app/code/core/Mage/Install/Model/Installer/Config.php
+--- magento-vanilla/app/code/core/Mage/Install/Model/Installer/Config.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Install/Model/Installer/Config.php	2013-10-01 16:31:43.748689990 +0300
+@@ -105,7 +105,7 @@
+             $template = str_replace('{{' . $index . '}}', '<![CDATA[' . $value . ']]>', $template);
+         }
+         file_put_contents($this->_localConfigFile, $template);
+-        chmod($this->_localConfigFile, 0777);
++        chmod($this->_localConfigFile, 0770);
+     }
+ 
+     public function getFormData()
+diff -urN magento-vanilla/app/code/core/Mage/Install/Model/Installer/Console.php magento/app/code/core/Mage/Install/Model/Installer/Console.php
+--- magento-vanilla/app/code/core/Mage/Install/Model/Installer/Console.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Install/Model/Installer/Console.php	2013-10-01 16:31:54.812752109 +0300
+@@ -434,8 +434,8 @@
+             /**
+              * Change directories mode to be writable by apache user
+              */
+-            @chmod('var/cache', 0777);
+-            @chmod('var/session', 0777);
++            @chmod('var/cache', 0770);
++            @chmod('var/session', 0770);
+ 
+         } catch (Exception $e) {
+             $this->addError('ERROR: ' . $e->getMessage());
+diff -urN magento-vanilla/app/code/core/Mage/Sales/controllers/DownloadController.php magento/app/code/core/Mage/Sales/controllers/DownloadController.php
+--- magento-vanilla/app/code/core/Mage/Sales/controllers/DownloadController.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/code/core/Mage/Sales/controllers/DownloadController.php	2013-10-01 16:29:49.066753834 +0300
+@@ -85,7 +85,7 @@
+         }
+ 
+         $directory = dirname($filePath);
+-        @mkdir($directory, 0777, true);
++        @mkdir($directory, 0770, true);
+ 
+         $io = new Varien_Io_File();
+         $io->cd($directory);
+diff -urN magento-vanilla/app/etc/local.xml.additional magento/app/etc/local.xml.additional
+--- magento-vanilla/app/etc/local.xml.additional	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/etc/local.xml.additional	2013-10-01 16:32:05.230564730 +0300
+@@ -70,7 +70,7 @@
+              </backend_options>
+              <slow_backend_options>
+                  <hashed_directory_level>1</hashed_directory_level>
+-                 <hashed_directory_umask>0777</hashed_directory_umask>
++                 <hashed_directory_umask>0770</hashed_directory_umask>
+                  <file_name_prefix>fpc</file_name_prefix>
+                  <cache_dir><![CDATA[full_page_cache]]></cache_dir>
+              </slow_backend_options>
+diff -urN magento-vanilla/app/Mage.php magento/app/Mage.php
+--- magento-vanilla/app/Mage.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/app/Mage.php	2013-10-01 16:32:18.813564628 +0300
+@@ -813,12 +813,12 @@
+ 
+                 if (!is_dir($logDir)) {
+                     mkdir($logDir);
+-                    chmod($logDir, 0777);
++                    chmod($logDir, 0770);
+                 }
+ 
+                 if (!file_exists($logFile)) {
+                     file_put_contents($logFile, '');
+-                    chmod($logFile, 0777);
++                    chmod($logFile, 0770);
+                 }
+ 
+                 $format = '%timestamp% %priorityName% (%priority%): %message%' . PHP_EOL;
+diff -urN magento-vanilla/downloader/lib/Mage/Archive/Helper/File.php magento/downloader/lib/Mage/Archive/Helper/File.php
+--- magento-vanilla/downloader/lib/Mage/Archive/Helper/File.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Archive/Helper/File.php	2013-10-01 16:41:18.983626433 +0300
+@@ -99,7 +99,7 @@
+      * @param int $chmod
+      * @throws Mage_Exception
+      */
+-    public function open($mode = 'w+', $chmod = 0666)
++    public function open($mode = 'w+', $chmod = 0660)
+     {
+         if ($this->_isWritableMode($mode)) {
+             if (!is_writable($this->_fileLocation)) {
+diff -urN magento-vanilla/downloader/lib/Mage/Archive/Tar.php magento/downloader/lib/Mage/Archive/Tar.php
+--- magento-vanilla/downloader/lib/Mage/Archive/Tar.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Archive/Tar.php	2013-10-01 16:32:58.663751894 +0300
+@@ -436,7 +436,7 @@
+             if (in_array($header['type'], array("0",chr(0), ''))) {
+ 
+                 if(!file_exists($dirname)) {
+-                    $mkdirResult = @mkdir($dirname, 0777, true);
++                    $mkdirResult = @mkdir($dirname, 0770, true);
+ 
+                     if (false === $mkdirResult) {
+                         throw new Mage_Exception('Failed to create directory ' . $dirname);
+diff -urN magento-vanilla/downloader/lib/Mage/Backup/Filesystem.php magento/downloader/lib/Mage/Backup/Filesystem.php
+--- magento-vanilla/downloader/lib/Mage/Backup/Filesystem.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Backup/Filesystem.php	2013-10-01 16:33:07.582752632 +0300
+@@ -265,7 +265,7 @@
+             }
+ 
+             mkdir($backupsDir);
+-            chmod($backupsDir, 0777);
++            chmod($backupsDir, 0770);
+         }
+ 
+         if (!is_writable($backupsDir)) {
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Command/Install.php magento/downloader/lib/Mage/Connect/Command/Install.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Command/Install.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Command/Install.php	2013-10-01 16:35:26.272627744 +0300
+@@ -78,17 +78,17 @@
+             $isWritable = true;
+             if ($ftp) {
+                 $cwd=$ftpObj->getcwd();
+-                $ftpObj->mkdirRecursive($cwd . $dirCache,0777);
++                $ftpObj->mkdirRecursive($cwd . $dirCache,0770);
+                 $ftpObj->chdir($cwd);
+-                $ftpObj->mkdirRecursive($cwd . $dirTmp,0777);
++                $ftpObj->mkdirRecursive($cwd . $dirTmp,0770);
+                 $ftpObj->chdir($cwd);
+-                $ftpObj->mkdirRecursive($cwd . $dirMedia,0777);
++                $ftpObj->mkdirRecursive($cwd . $dirMedia,0770);
+                 $ftpObj->chdir($cwd);
+                 $err = "Please check for sufficient ftp write file permissions.";
+             } else {
+-                @mkdir($config->magento_root . $dirCache,0777,true);
+-                @mkdir($config->magento_root . $dirTmp,0777,true);
+-                @mkdir($config->magento_root . $dirMedia,0777,true);
++                @mkdir($config->magento_root . $dirCache,0770,true);
++                @mkdir($config->magento_root . $dirTmp,0770,true);
++                @mkdir($config->magento_root . $dirMedia,0770,true);
+                 $isWritable = is_writable($config->magento_root)
+                               && is_writable($config->magento_root . DIRECTORY_SEPARATOR . $config->downloader_path)
+                               && is_writable($config->magento_root . $dirCache)
+@@ -317,11 +317,11 @@
+                         $cwd=$ftpObj->getcwd();
+                         $dir=$cwd . DIRECTORY_SEPARATOR .$config->downloader_path . DIRECTORY_SEPARATOR
+                              . Mage_Connect_Config::DEFAULT_CACHE_PATH . DIRECTORY_SEPARATOR . trim( $pChan, "\\/");
+-                        $ftpObj->mkdirRecursive($dir,0777);
++                        $ftpObj->mkdirRecursive($dir,0770);
+                         $ftpObj->chdir($cwd);
+                     } else {
+                         $dir = $config->getChannelCacheDir($pChan);
+-                        @mkdir($dir, 0777, true);
++                        @mkdir($dir, 0770, true);
+                     }
+                     $dir = $config->getChannelCacheDir($pChan);
+                     $packageFileName = $pName . "-" . $pVer . ".tgz";
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Command/Registry.php magento/downloader/lib/Mage/Connect/Command/Registry.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Command/Registry.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Command/Registry.php	2013-10-01 16:35:45.944628195 +0300
+@@ -320,7 +320,7 @@
+                             $remoteXmlPath = $ftpDir . '/' . Mage_Connect_Package::PACKAGE_XML_DIR;
+                             $remoteXml = $package->getReleaseFilename() . '.xml';
+                             $ftpObj->mkdirRecursive($remoteXmlPath);
+-                            $ftpObj->upload($remoteXml, $localXml, 0777, 0666);
++                            $ftpObj->upload($remoteXml, $localXml, 0770, 066);
+                             $ftpObj->chdir($ftpDir);
+                         }
+                     } else {
+@@ -328,9 +328,9 @@
+                         $destFile = $package->getReleaseFilename() . '.xml';
+                         $dest = $destDir . DS . $destFile;
+ 
+-                        @mkdir($destDir, 0777, true);
++                        @mkdir($destDir, 0770, true);
+                         @file_put_contents($dest, $package->getPackageXml());
+-                        @chmod($dest, 0666);
++                        @chmod($dest, 0660);
+                     }
+ 
+                     $this->ui()->output("Successfully added: {$channel}/{$name}-{$version}");
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Config.php magento/downloader/lib/Mage/Connect/Config.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Config.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Config.php	2013-10-01 16:33:35.294897218 +0300
+@@ -147,14 +147,14 @@
+             ),
+            'global_dir_mode' => array (
+                 'type' => 'octal',
+-                'value' => 0777,
++                'value' => 0770,
+                 'prompt' => 'directory creation mode',
+                 'doc' => 'directory creation mode',
+                 'possible' => '0777, 0666 etc.',
+             ),
+            'global_file_mode' => array (
+                 'type' => 'octal',
+-                'value' => 0666,
++                'value' => 0660,
+                 'prompt' => 'file creation mode',
+                 'doc' => 'file creation mode',
+                 'possible' => '0777, 0666 etc.',
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Ftp.php magento/downloader/lib/Mage/Connect/Ftp.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Ftp.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Ftp.php	2013-10-01 16:35:01.089751592 +0300
+@@ -71,7 +71,7 @@
+      * @param string $path
+      * @param int $mode
+      */
+-    public function mkdirRecursive($path, $mode = 0777)
++    public function mkdirRecursive($path, $mode = 0770)
+     {
+         $this->checkConnected();
+         $dir = explode('/', $path);
+@@ -239,7 +239,7 @@
+      * @param int $fileMode
+      * @return boolean
+      */
+-    public function upload($remote, $local, $dirMode = 0777, $fileMode=0)
++    public function upload($remote, $local, $dirMode = 0770, $fileMode=0)
+     {
+         $this->checkConnected();
+ 
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Package/Reader.php magento/downloader/lib/Mage/Connect/Package/Reader.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Package/Reader.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Package/Reader.php	2013-10-01 16:34:01.998564881 +0300
+@@ -98,7 +98,7 @@
+             throw new Exception('Invalid package file specified.');
+         }
+         if ($this->_getArchivator()->isArchive($this->_file)) {
+-            @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0777, true);
++            @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0770, true);
+             $this->_file = $this->_getArchivator()->extract(
+                 self::DEFAULT_NAME_PACKAGE,
+                 $this->_file,
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Package/Writer.php magento/downloader/lib/Mage/Connect/Package/Writer.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Package/Writer.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Package/Writer.php	2013-10-01 16:34:18.471876980 +0300
+@@ -115,19 +115,19 @@
+     */
+     public function composePackage()
+     {
+-        @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0777, true);        
++        @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0770, true);        
+         $root = self::PATH_TO_TEMPORARY_DIRECTORY . basename($this->_namePackage);
+-        @mkdir($root, 0777, true);
++        @mkdir($root, 0770, true);
+         foreach ($this->_files as $file) {
+             
+             if (is_dir($file) || is_file($file)) {
+                 $fileName = basename($file);
+                 $filePath = dirname($file);
+-                @mkdir($root . DS . $filePath, 0777, true);
++                @mkdir($root . DS . $filePath, 0770, true);
+                 if (is_file($file)) {
+                     copy($file, $root . DS . $filePath . DS . $fileName);
+                 } else {
+-                    @mkdir($root . DS . $filePath . $fileName, 0777);
++                    @mkdir($root . DS . $filePath . $fileName, 0770);
+                 }
+             }
+         }
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Packager.php magento/downloader/lib/Mage/Connect/Packager.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Packager.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Packager.php	2013-10-01 16:33:48.143750776 +0300
+@@ -370,7 +370,7 @@
+         $contents = $package->getContents();
+         $arc = $this->getArchiver();
+         $target = dirname($file) . DS . $package->getReleaseFilename();
+-        @mkdir($target, 0777, true);
++        @mkdir($target, 0770, true);
+         $tar = $arc->unpack($file, $target);
+         $modeFile = $this->_getFileMode($configObj);
+         $modeDir = $this->_getDirMode($configObj);
+@@ -409,7 +409,7 @@
+         $contents = $package->getContents();
+         $arc = $this->getArchiver();
+         $target = dirname($file) . DS . $package->getReleaseFilename();
+-        @mkdir($target, 0777, true);
++        @mkdir($target, 0770, true);
+         $tar = $arc->unpack($file, $target);
+         $modeFile = $this->_getFileMode($configObj);
+         $modeDir = $this->_getDirMode($configObj);
+diff -urN magento-vanilla/downloader/lib/Mage/Connect/Rest.php magento/downloader/lib/Mage/Connect/Rest.php
+--- magento-vanilla/downloader/lib/Mage/Connect/Rest.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/Connect/Rest.php	2013-10-01 16:34:48.696626459 +0300
+@@ -369,7 +369,7 @@
+             throw new Exception("Package not found: {$package} {$version}");
+         }
+         $dir = dirname($targetFile);
+-        @mkdir($dir, 0777, true);
++        @mkdir($dir, 0770, true);
+         $result = @file_put_contents($targetFile, $out);
+         if (false === $result) {
+             throw new Exception("Cannot write to file {$targetFile}");
+diff -urN magento-vanilla/downloader/lib/Mage/System/Dirs.php magento/downloader/lib/Mage/System/Dirs.php
+--- magento-vanilla/downloader/lib/Mage/System/Dirs.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/System/Dirs.php	2013-10-01 16:32:31.448555619 +0300
+@@ -77,7 +77,7 @@
+     }
+ 
+ 
+-    public static function mkdirStrict($path, $recursive = true, $mode = 0777)
++    public static function mkdirStrict($path, $recursive = true, $mode = 0770)
+     {
+         $exists = file_exists($path);
+         if($exists && is_dir($path)) {
+diff -urN magento-vanilla/downloader/lib/Mage/System/Ftp.php magento/downloader/lib/Mage/System/Ftp.php
+--- magento-vanilla/downloader/lib/Mage/System/Ftp.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/downloader/lib/Mage/System/Ftp.php	2013-10-01 16:32:49.261877777 +0300
+@@ -73,7 +73,7 @@
+      * @param int $mode
+      * @return bool
+      */
+-    public function mkdirRecursive($path, $mode = 0777)
++    public function mkdirRecursive($path, $mode = 0770)
+     {
+         $this->checkConnected();
+         $dir = explode("/", $path);
+@@ -237,7 +237,7 @@
+      * @param int $ftpMode
+      * @return unknown_type
+      */
+-    public function upload($remote, $local, $dirMode = 0777, $ftpMode = FTP_BINARY)
++    public function upload($remote, $local, $dirMode = 0770, $ftpMode = FTP_BINARY)
+     {
+         $this->checkConnected();
+ 
+diff -urN magento-vanilla/errors/processor.php magento/errors/processor.php
+--- magento-vanilla/errors/processor.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/errors/processor.php	2013-10-01 16:35:57.746751553 +0300
+@@ -460,11 +460,11 @@
+         $this->_setReportData($reportData);
+ 
+         if (!file_exists($this->_reportDir)) {
+-            @mkdir($this->_reportDir, 0777, true);
++            @mkdir($this->_reportDir, 0770, true);
+         }
+ 
+         @file_put_contents($this->_reportFile, serialize($reportData));
+-        @chmod($this->_reportFile, 0777);
++        @chmod($this->_reportFile, 0770);
+ 
+         if (isset($reportData['skin']) && self::DEFAULT_SKIN != $reportData['skin']) {
+             $this->_setSkin($reportData['skin']);
+diff -urN magento-vanilla/get.php magento/get.php
+--- magento-vanilla/get.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/get.php	2013-10-01 16:36:12.377881898 +0300
+@@ -150,7 +150,7 @@
+ if ($databaseFileSotrage->getId()) {
+     $directory = dirname($filePath);
+     if (!is_dir($directory)) {
+-        mkdir($directory, 0777, true);
++        mkdir($directory, 0770, true);
+     }
+ 
+     $fp = fopen($filePath, 'w');
+diff -urN magento-vanilla/lib/Mage/Archive/Helper/File.php magento/lib/Mage/Archive/Helper/File.php
+--- magento-vanilla/lib/Mage/Archive/Helper/File.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Archive/Helper/File.php	2013-10-01 16:41:33.846752402 +0300
+@@ -99,7 +99,7 @@
+      * @param int $chmod
+      * @throws Mage_Exception
+      */
+-    public function open($mode = 'w+', $chmod = 0666)
++    public function open($mode = 'w+', $chmod = 0660)
+     {
+         if ($this->_isWritableMode($mode)) {
+             if (!is_writable($this->_fileLocation)) {
+diff -urN magento-vanilla/lib/Mage/Archive/Tar.php magento/lib/Mage/Archive/Tar.php
+--- magento-vanilla/lib/Mage/Archive/Tar.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Archive/Tar.php	2013-10-01 16:38:58.821752207 +0300
+@@ -436,7 +436,7 @@
+             if (in_array($header['type'], array("0",chr(0), ''))) {
+ 
+                 if(!file_exists($dirname)) {
+-                    $mkdirResult = @mkdir($dirname, 0777, true);
++                    $mkdirResult = @mkdir($dirname, 0770, true);
+ 
+                     if (false === $mkdirResult) {
+                         throw new Mage_Exception('Failed to create directory ' . $dirname);
+diff -urN magento-vanilla/lib/Mage/Backup/Filesystem.php magento/lib/Mage/Backup/Filesystem.php
+--- magento-vanilla/lib/Mage/Backup/Filesystem.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Backup/Filesystem.php	2013-10-01 16:39:25.621004867 +0300
+@@ -265,7 +265,7 @@
+             }
+ 
+             mkdir($backupsDir);
+-            chmod($backupsDir, 0777);
++            chmod($backupsDir, 0770);
+         }
+ 
+         if (!is_writable($backupsDir)) {
+diff -urN magento-vanilla/lib/Mage/Connect/Command/Install.php magento/lib/Mage/Connect/Command/Install.php
+--- magento-vanilla/lib/Mage/Connect/Command/Install.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Connect/Command/Install.php	2013-10-01 16:40:42.823877808 +0300
+@@ -263,7 +263,7 @@
+                     }
+ 
+                     $dir = $config->getChannelCacheDir($pChan);
+-                    @mkdir($dir, 0777, true);
++                    @mkdir($dir, 0770, true);
+                     $file = $dir.DIRECTORY_SEPARATOR.$pName."-".$pVer.".tgz";
+                     if(!@file_exists($file)) {
+                         $rest->downloadPackageFileOfRelease($pName, $pVer, $file);
+diff -urN magento-vanilla/lib/Mage/Connect/Config.php magento/lib/Mage/Connect/Config.php
+--- magento-vanilla/lib/Mage/Connect/Config.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Connect/Config.php	2013-10-01 16:39:37.364878993 +0300
+@@ -36,14 +36,14 @@
+         ),
+            'global_dir_mode' => array (
+                 'type' => 'octal',
+-                'value' => 0777,
++                'value' => 0770,
+                 'prompt' => 'directory creation mode',
+                 'doc' => 'directory creation mode',
+                 'possible' => '0777, 0666 etc.',
+         ),
+            'global_file_mode' => array (
+                 'type' => 'octal',
+-                'value' => 0666,
++                'value' => 0660,
+                 'prompt' => 'file creation mode',
+                 'doc' => 'file creation mode',
+                 'possible' => '0777, 0666 etc.',
+diff -urN magento-vanilla/lib/Mage/Connect/Package/Reader.php magento/lib/Mage/Connect/Package/Reader.php
+--- magento-vanilla/lib/Mage/Connect/Package/Reader.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Connect/Package/Reader.php	2013-10-01 16:40:10.502752230 +0300
+@@ -98,7 +98,7 @@
+             throw new Exception('Invalid package file specified.');
+         }
+         if ($this->_getArchivator()->isArchive($this->_file)) {
+-            @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0777, true);
++            @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0770, true);
+             $this->_file = $this->_getArchivator()->extract(
+                 self::DEFAULT_NAME_PACKAGE,
+                 $this->_file,
+diff -urN magento-vanilla/lib/Mage/Connect/Package/Writer.php magento/lib/Mage/Connect/Package/Writer.php
+--- magento-vanilla/lib/Mage/Connect/Package/Writer.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Connect/Package/Writer.php	2013-10-01 16:40:33.030563814 +0300
+@@ -115,19 +115,19 @@
+     */
+     public function composePackage()
+     {
+-        @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0777, true);        
++        @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0770, true);        
+         $root = self::PATH_TO_TEMPORARY_DIRECTORY . basename($this->_namePackage);
+-        @mkdir($root, 0777, true);
++        @mkdir($root, 0770, true);
+         foreach ($this->_files as $file) {
+             
+             if (is_dir($file) || is_file($file)) {
+                 $fileName = basename($file);
+                 $filePath = dirname($file);
+-                @mkdir($root . DS . $filePath, 0777, true);
++                @mkdir($root . DS . $filePath, 0770, true);
+                 if (is_file($file)) {
+                     copy($file, $root . DS . $filePath . DS . $fileName);
+                 } else {
+-                    @mkdir($root . DS . $filePath . $fileName, 0777);
++                    @mkdir($root . DS . $filePath . $fileName, 0770);
+                 }
+             }
+         }
+@@ -145,21 +145,21 @@
+     */
+     public function composePackageV1x(array $destinationFiles)
+     {
+-        @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0777, true);
++        @mkdir(self::PATH_TO_TEMPORARY_DIRECTORY, 0770, true);
+         $root = self::PATH_TO_TEMPORARY_DIRECTORY . basename($this->_namePackage);
+-        @mkdir($root, 0777, true);
++        @mkdir($root, 0770, true);
+         $packageFilesDir = $root . DS . basename($this->_namePackage);
+-        @mkdir($packageFilesDir, 0777, true);
++        @mkdir($packageFilesDir, 0770, true);
+         foreach ($this->_files as $index => $file) {
+             $destinationFile = $destinationFiles[$index];
+             if (is_dir($file) || is_file($file)) {
+                 $fileName = basename($destinationFile);
+                 $filePath = dirname($destinationFile);
+-                @mkdir($packageFilesDir . DS . $filePath, 0777, true);
++                @mkdir($packageFilesDir . DS . $filePath, 0770, true);
+                 if (is_file($file)) {
+                     copy($file, $packageFilesDir . DS . $filePath . DS . $fileName);
+                 } else {
+-                    @mkdir($packageFilesDir . DS . $filePath . $fileName, 0777);
++                    @mkdir($packageFilesDir . DS . $filePath . $fileName, 0770);
+                 }
+             }
+         }
+diff -urN magento-vanilla/lib/Mage/Connect/Packager.php magento/lib/Mage/Connect/Packager.php
+--- magento-vanilla/lib/Mage/Connect/Packager.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Connect/Packager.php	2013-10-01 16:39:47.670751773 +0300
+@@ -222,7 +222,7 @@
+         $contents = $package->getContents();
+         $arc = $this->getArchiver();
+         $target = dirname($file).DS.$package->getReleaseFilename();
+-        @mkdir($target, 0777, true);
++        @mkdir($target, 0770, true);
+         $mode = $configObj->global_dir_mode;
+         $tar = $arc->unpack($file, $target);
+         $modeFile = $configObj->global_file_mode;
+@@ -255,7 +255,7 @@
+         $contents = $package->getContents();
+         $arc = $this->getArchiver();
+         $target = dirname($file).DS.$package->getReleaseFilename();
+-        @mkdir($target, 0777, true);
++        @mkdir($target, 0770, true);
+         $mode = $configObj->global_dir_mode;
+         $tar = $arc->unpack($file, $target);
+         $modeFile = $configObj->global_file_mode;
+diff -urN magento-vanilla/lib/Mage/Connect/Rest.php magento/lib/Mage/Connect/Rest.php
+--- magento-vanilla/lib/Mage/Connect/Rest.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/Connect/Rest.php	2013-10-01 16:40:01.648749699 +0300
+@@ -344,7 +344,7 @@
+             throw new Exception("Package not found: {$package} {$version}");
+         }
+         $dir = dirname($targetFile);
+-        @mkdir($dir, 0777, true);
++        @mkdir($dir, 0770, true);
+         $result = @file_put_contents($targetFile, $out);
+         if(false === $result) {
+             throw new Exception("Cannot write to file {$targetFile}");
+diff -urN magento-vanilla/lib/Mage/System/Dirs.php magento/lib/Mage/System/Dirs.php
+--- magento-vanilla/lib/Mage/System/Dirs.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/System/Dirs.php	2013-10-01 16:38:47.893752097 +0300
+@@ -55,7 +55,7 @@
+     }  
+     
+     
+-    public static function mkdirStrict($path, $recursive = true, $mode = 0777)
++    public static function mkdirStrict($path, $recursive = true, $mode = 0770)
+     {
+         $exists = file_exists($path);        
+         if($exists && is_dir($path)) {
+diff -urN magento-vanilla/lib/Mage/System/Ftp.php magento/lib/Mage/System/Ftp.php
+--- magento-vanilla/lib/Mage/System/Ftp.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Mage/System/Ftp.php	2013-10-01 16:39:17.031753948 +0300
+@@ -73,7 +73,7 @@
+      * @param int $mode
+      * @return bool
+      */
+-    public function mkdirRecursive($path, $mode = 0777)
++    public function mkdirRecursive($path, $mode = 0770)
+     {
+         $this->checkConnected();
+         $dir = explode("/", $path);
+@@ -237,7 +237,7 @@
+      * @param int $ftpMode
+      * @return unknown_type
+      */
+-    public function upload($remote, $local, $dirMode = 0777, $ftpMode = FTP_BINARY)
++    public function upload($remote, $local, $dirMode = 0770, $ftpMode = FTP_BINARY)
+     {
+         $this->checkConnected();
+ 
+diff -urN magento-vanilla/lib/Varien/Autoload.php magento/lib/Varien/Autoload.php
+--- magento-vanilla/lib/Varien/Autoload.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Varien/Autoload.php	2013-10-01 16:38:04.724003112 +0300
+@@ -138,7 +138,7 @@
+     {
+         if (!is_dir($this->_collectPath)) {
+             @mkdir($this->_collectPath);
+-            @chmod($this->_collectPath, 0777);
++            @chmod($this->_collectPath, 0770);
+         }
+ 
+         if (!is_writeable($this->_collectPath)) {
+diff -urN magento-vanilla/lib/Varien/Convert/Adapter/Io.php magento/lib/Varien/Convert/Adapter/Io.php
+--- magento-vanilla/lib/Varien/Convert/Adapter/Io.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Varien/Convert/Adapter/Io.php	2013-10-01 16:36:58.481753917 +0300
+@@ -66,7 +66,7 @@
+      {
+          $data = $this->getData();
+          $filename = $this->getResource()->pwd().'/'.$this->getVar('filename');
+-         $result = $this->getResource()->write($filename, $data, 0777);
++         $result = $this->getResource()->write($filename, $data, 0770);
+          if (false===$result) {
+              $this->addException('Could not save file: '.$filename, Varien_Convert_Exception::FATAL);
+          } else {
+diff -urN magento-vanilla/lib/Varien/File/Uploader.php magento/lib/Varien/File/Uploader.php
+--- magento-vanilla/lib/Varien/File/Uploader.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Varien/File/Uploader.php	2013-10-01 16:37:56.402631204 +0300
+@@ -209,7 +209,7 @@
+         $this->_result = $this->_moveFile($this->_file['tmp_name'], $destinationFile);
+ 
+         if ($this->_result) {
+-            chmod($destinationFile, 0777);
++            chmod($destinationFile, 0770);
+             if ($this->_enableFilesDispersion) {
+                 $fileName = str_replace(DIRECTORY_SEPARATOR, '/',
+                     self::_addDirSeparator($this->_dispretionPath)) . $fileName;
+@@ -505,7 +505,7 @@
+             $destinationFolder = substr($destinationFolder, 0, -1);
+         }
+ 
+-        if (!(@is_dir($destinationFolder) || @mkdir($destinationFolder, 0777, true))) {
++        if (!(@is_dir($destinationFolder) || @mkdir($destinationFolder, 0770, true))) {
+             throw new Exception("Unable to create directory '{$destinationFolder}'.");
+         }
+         return $this;
+diff -urN magento-vanilla/lib/Varien/Io/File.php magento/lib/Varien/Io/File.php
+--- magento-vanilla/lib/Varien/Io/File.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Varien/Io/File.php	2013-10-01 16:41:26.879002845 +0300
+@@ -117,7 +117,7 @@
+      * @param string $mode
+      * @return bool
+      */
+-    public function streamOpen($fileName, $mode = 'w+', $chmod = 0666)
++    public function streamOpen($fileName, $mode = 'w+', $chmod = 0660)
+     {
+         $writeableMode = preg_match('#^[wax]#i', $mode);
+         if ($writeableMode && !is_writeable($this->_cwd)) {
+@@ -333,7 +333,7 @@
+      * @param boolean $recursive
+      * @return boolean
+      */
+-    public function mkdir($dir, $mode=0777, $recursive=true)
++    public function mkdir($dir, $mode=0770, $recursive=true)
+     {
+         if ($this->_cwd) {
+             chdir($this->_cwd);
+@@ -536,7 +536,7 @@
+      * @param int $mode
+      * @return bool
+      */
+-    public function checkAndCreateFolder($folder, $mode = 0777)
++    public function checkAndCreateFolder($folder, $mode = 0770)
+     {
+         if (is_dir($folder)) {
+             return true;
+@@ -557,7 +557,7 @@
+         if( !$destinationFolder ) {
+             return $this;
+         }
+-        if (!(@is_dir($destinationFolder) || $this->mkdir($destinationFolder, 0777, true))) {
++        if (!(@is_dir($destinationFolder) || $this->mkdir($destinationFolder, 0770, true))) {
+             throw new Exception("Unable to create directory '{$destinationFolder}'.");
+         }
+ 
+@@ -579,7 +579,7 @@
+                 continue;
+             } else {
+                 if( is_writable($oldPath) ) {
+-                    $this->mkdir($newPath, 0777);
++                    $this->mkdir($newPath, 0770);
+                 } else {
+                     throw new Exception("Unable to create directory '{$newPath}'. Access forbidden.");
+                 }
+diff -urN magento-vanilla/lib/Varien/Io/Ftp.php magento/lib/Varien/Io/Ftp.php
+--- magento-vanilla/lib/Varien/Io/Ftp.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Varien/Io/Ftp.php	2013-10-01 16:37:39.083671583 +0300
+@@ -166,7 +166,7 @@
+      * @param boolean $recursive
+      * @return boolean
+      */
+-    public function mkdir($dir, $mode=0777, $recursive=true)
++    public function mkdir($dir, $mode=0770, $recursive=true)
+     {
+         return @ftp_mkdir($this->_conn, $dir);
+     }
+diff -urN magento-vanilla/lib/Varien/Io/Interface.php magento/lib/Varien/Io/Interface.php
+--- magento-vanilla/lib/Varien/Io/Interface.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Varien/Io/Interface.php	2013-10-01 16:37:46.371754649 +0300
+@@ -50,7 +50,7 @@
+      * Create a directory
+      *
+      */
+-    public function mkdir($dir, $mode=0777, $recursive=true);
++    public function mkdir($dir, $mode=0770, $recursive=true);
+ 
+     /**
+      * Delete a directory
+diff -urN magento-vanilla/lib/Varien/Io/Sftp.php magento/lib/Varien/Io/Sftp.php
+--- magento-vanilla/lib/Varien/Io/Sftp.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Varien/Io/Sftp.php	2013-10-01 16:37:11.226754557 +0300
+@@ -92,7 +92,7 @@
+      * false is returned and some part of the hierarchy might be created.
+      * No rollback is performed.
+      */
+-    public function mkdir($dir, $mode=0777, $recursive=true)
++    public function mkdir($dir, $mode=0770, $recursive=true)
+     {
+         if ($recursive) {
+             $no_errors = true;
+diff -urN magento-vanilla/lib/Zend/Cloud/StorageService/Adapter/FileSystem.php magento/lib/Zend/Cloud/StorageService/Adapter/FileSystem.php
+--- magento-vanilla/lib/Zend/Cloud/StorageService/Adapter/FileSystem.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Zend/Cloud/StorageService/Adapter/FileSystem.php	2013-10-01 16:38:18.852626494 +0300
+@@ -104,7 +104,7 @@
+     {
+         $path = $this->_getFullPath($destinationPath);
+         file_put_contents($path, $data);
+-        chmod($path, 0777);
++        chmod($path, 0770);
+     }
+ 
+     /**
+diff -urN magento-vanilla/lib/Zend/Search/Lucene/Storage/Directory/Filesystem.php magento/lib/Zend/Search/Lucene/Storage/Directory/Filesystem.php
+--- magento-vanilla/lib/Zend/Search/Lucene/Storage/Directory/Filesystem.php	2013-09-24 12:20:24.000000000 +0300
++++ magento/lib/Zend/Search/Lucene/Storage/Directory/Filesystem.php	2013-10-01 16:41:43.550752562 +0300
+@@ -57,7 +57,7 @@
+      *
+      * @var integer
+      */
+-    protected static $_defaultFilePermissions = 0666;
++    protected static $_defaultFilePermissions = 0660;
+ 
+ 
+     /**
+@@ -90,7 +90,7 @@
+      * @return boolean
+      */
+ 
+-    public static function mkdirs($dir, $mode = 0777, $recursive = true)
++    public static function mkdirs($dir, $mode = 0770, $recursive = true)
+     {
+         if (($dir === null) || $dir === '') {
+             return false;
