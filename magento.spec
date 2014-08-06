@@ -2,14 +2,14 @@
 # Updated Magento RPM spec for el6+:
 # - Add SELinux support
 # - Expose only parts of Magento via DocumentRoot (symlinks)
-# - More robust default Apache and PHP configuration
+# - More robust default Apache and PHP configuration (nginx can be used as well)
 # - RHEL-locations for files
 # - Added sample data under docdir
 # - Added a patch to fix Magento's fondness of 0777 and 0666 permissions
 # 
 # (php module names are a bit different from RHEL built-ins)
 #
-# Magento seems to need in MySQL: 
+# Magento seems to need following permssions in MySQL database: 
 # - DROP, CREATE, ALTER, LOCK TABLES, DELETE, INSERT, SELECT, UPDATE, CREATE TEMPORARY TABLES
 #
 # Also with SELinux: 
@@ -21,10 +21,10 @@
 # Based on Silvan Calarco's spec file from Openmamba.
 #
 %define installdir %{_datadir}/magento
-%define sampledata_version 1.6.1.0
+%define sampledata_version 1.9.0.0
 Name:          magento
-Version:       1.8.0.0
-Release:       6.crasman
+Version:       1.9.0.1
+Release:       4.crasman
 Summary:       An open-source eCommerce platform focused on flexibility and control
 Group:         Applications/Web
 Vendor:        Crasman
@@ -34,14 +34,15 @@ Source:        http://www.magentocommerce.com/downloads/assets/%{version}/magent
 Source1:       magento-crontab
 Source2:       http://www.magentocommerce.com/downloads/assets/%{version}/magento-sample-data-%{sampledata_version}.tar.bz2
 Patch0:        magento-1.3.2.1-cron_export_fix_lang.patch
-Patch1:        magento-1.8-permissions.patch
+Patch1:        magento-1.9-permissions.patch
 License:       Open Software License
 BuildRoot:     %{_tmppath}/%{name}-%{version}-root
 BuildArch:     noarch
-Requires:      php-mysql, php-mcrypt, php-imap, php-imagick, php-apc, php-module
+Requires:      php-mysql, php-mcrypt, php-imap, php-imagick, php-module
 Requires:      httpd, mod_ssl
 Requires(post): policycoreutils-python
 Requires(postun): policycoreutils-python
+Requires(pre): /usr/sbin/useradd
 
 %description
 An open-source eCommerce platform focused on flexibility and control.
@@ -236,6 +237,9 @@ perl -pi -e 's|getcwd\(\)|"%{installdir}"|' %{buildroot}%{installdir}/index.php
 %clean
 [ "%{buildroot}" != / ] && rm -rf "%{buildroot}"
 
+%pre
+/usr/sbin/useradd -M -d %{_datadir}/magento -s /usr/libexec/openssh/sftp-server -c "Magento developer" magedev >/dev/null 2>&1 || :
+
 %post
 semanage fcontext -a -t httpd_sys_content_t '%{installdir}(/.*)?' 2>/dev/null || :
 semanage fcontext -a -t httpd_sys_rw_content_t '%{installdir}/media(/.*)?' 2>/dev/null || :
@@ -266,8 +270,10 @@ fi
 %{_var}/www/secure_html/magento/*
 %{installdir}/*.php
 %{installdir}/errors
-%{installdir}/app/code/*
-%{installdir}/app/design/*
+%{installdir}/app/code/community/*
+%{installdir}/app/code/core/*
+%{installdir}/app/design/install/*
+%{installdir}/app/design/adminhtml/*
 %attr(0660,root,apache) %config(noreplace) %{installdir}/app/etc/*
 %attr(0770,root,apache) %dir %{installdir}/app/etc
 %attr(0770,root,apache) %dir %{installdir}/app/etc/modules
@@ -281,9 +287,9 @@ fi
 %{installdir}/mage/
 %{installdir}/pkginfo/*
 %{installdir}/shell/*.php
-%{installdir}/skin/*
+#%{installdir}/skin/*
 %attr(0660,root,apache) %{installdir}/var/package/*
-%attr(0770,root,apache) %dir %{installdir}/media
+%attr(0770,magedev,apache) %dir %{installdir}/media
 %attr(0770,root,apache) %dir %{installdir}/media/downloadable
 %attr(0770,root,apache) %dir %{installdir}/var
 %attr(0770,root,apache) %dir %{installdir}/var/package
@@ -292,8 +298,23 @@ fi
 %{installdir}/php.ini.sample
 %defattr(0660,root,apache,0770)
 %{installdir}/media/*
+%defattr(0640,magedev,apache,0750)
+%dir %{installdir}/app/code/local/
+%dir %{installdir}/app/design/frontend/
+%{installdir}/app/design/frontend/*
+%dir %{installdir}/skin
+%{installdir}/skin/*
+#%{installdir}/media/*
+%defattr(0640,root,apache,0750)
+
 
 %changelog
+* Wed Aug  6 2014 Taneli Leppa <taneli@crasman.fi> - 1.9.0.1-4.crasman
+- Add "magedev" user with SFTP shell, make certain theme directories writable by them (for theme installers, etc).
+
+* Mon Aug  4 2014 Taneli Leppa <taneli@crasman.fi> - 1.9.0.1-1.crasman
+- bump to upstream 1.9.0.1
+
 * Mon Sep 30 2013 Taneli Leppä <taneli@crasman.fi> - 1.8.0.0-6.crasman
 - bumped to upstream 1.8.0 and modify packaging
 
